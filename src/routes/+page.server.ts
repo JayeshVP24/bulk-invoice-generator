@@ -19,7 +19,7 @@ function chunkify(array: form[], chunkSize: number): form[][] {
 
 	return chunks
 }
-
+process.noDeprecation = true
 async function generatePdf(data: form[], initialInvoiceNumber: number, commisionPerc: number, central: boolean): Promise<[number, Buffer] | undefined>  {
 	let htmlString: string = '';
 	let taxPerc = 0.18;
