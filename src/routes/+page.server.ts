@@ -1,9 +1,8 @@
 import { invoiceTempalte } from '$lib';
 import type { Actions } from './$types';
 import { read, utils } from 'xlsx';
-import puppeteer from 'puppeteer';
+import chromium from 'chrome-aws-lambda';
 import PDFMerger from 'pdf-merger-js';
-import fs from "fs"
 
 interface form {
 	Amount: number;
@@ -21,7 +20,7 @@ function chunkify(array: form[], chunkSize: number): form[][] {
 	return chunks
 }
 
-async function generatePdf(data: form[], index: number, initialInvoiceNumber: number, commisionPerc: number, central: boolean): Promise<[number, Buffer]> | undefined {
+async function generatePdf(data: form[], initialInvoiceNumber: number, commisionPerc: number, central: boolean): Promise<[number, Buffer] | undefined>  {
 	let htmlString: string = '';
 	let taxPerc = 0.18;
 	for (const el of data) {
@@ -39,9 +38,15 @@ async function generatePdf(data: form[], index: number, initialInvoiceNumber: nu
 		initialInvoiceNumber++
 	}
 	try {
-		const browser = await puppeteer.launch({
-			headless: "new"
+
+		const browser = await chromium.puppeteer.launch({
+			args: [...chromium.args, "--hide-scrollbars", "--disable-web-security"],
+			defaultViewport: chromium.defaultViewport,
+			executablePath: await chromium.executablePath,
+			headless: "new",
+			ignoreHTTPSErrors: true,
 		})
+
 		const page = await browser.newPage()
 		await page.setContent(htmlString)
 		const pdfBuffer = (await page.pdf({
@@ -79,7 +84,7 @@ export const actions = {
 		const central = formData.get("tax") as unknown as string === "0" ? true : false
 
 		for(let i=0; i<chunks.length; i++) {
-			let resPdf = await generatePdf(chunks[i], i, initialInvoiceNumber, commisionPerc, central)
+			let resPdf = await generatePdf(chunks[i], initialInvoiceNumber, commisionPerc, central)
 			if(!resPdf) throw Error("Something went wront")
 			initialInvoiceNumber = resPdf[0]
 			await merger.add(resPdf[1])
