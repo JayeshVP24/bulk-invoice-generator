@@ -1,12 +1,26 @@
 // place files you want to import through the `$lib` alias in this folder.
 import { numWords } from "./numWords.js"
+function toTitleCase(str: string) {
+  // Split the string into words
+  let words = str.split(' ');
 
+  // Capitalize the first letter of each word
+  for (let i = 0; i < words.length; i++) {
+    words[i] = words[i][0].toUpperCase() + words[i].slice(1).toLowerCase();
+  }
+
+  // Join the words back together to form the title case string
+  return words.join(' ');
+}
 export const invoiceTempalte = (data: {
 	invoiceNo: string,
 	dateOfInvoice: string,
 	tsxAmnt: number,
 	commisionPerc: number,
 	taxPerc: number,
+        name: string,
+        retailerID: string,
+        central: boolean
 }) => {
   const taxableVal = data.tsxAmnt * data.commisionPerc
   const gst = taxableVal * data.taxPerc
@@ -36,11 +50,11 @@ export const invoiceTempalte = (data: {
   <div id="billed">
     <span>
       <p>Name</p>
-      <p>ABHISHEK WADEKAR</p>
+      <p>${toTitleCase(data.name)}</p>
     </span>
     <span>
       <p>Retailer ID</p>
-      <p>8779254908</p>
+      <p>${data.retailerID}</p>
     </span>
     <span>
       <p>Address:</p>
@@ -65,16 +79,31 @@ export const invoiceTempalte = (data: {
       <span>HSN/SAC</span>
       <span>Transaction Amount (INR)</span>
       <span>Taxable Value</span>
-      <span>IGST ${data.taxPerc * 100} %</span>
+      ${data.central ? (
+        `<span>IGST ${data.taxPerc * 100}%</span>
+        <span>SGST ${(Number(data.taxPerc) / 2) * 100}%</span>
+        <span>CGST ${(Number(data.taxPerc) / 2) * 100}%</span>`
+      ): (
+        `<span>IGST ${data.taxPerc * 100}%</span>
+        <span>SGST ${(Number(data.taxPerc) / 2) * 100}%</span>
+        <span>CGST ${(Number(data.taxPerc) / 2) * 100}%</span>`
+      )}
       <span>Total Invoice Value</span>
     </div>
     <div>
-      <span>Platform charges CREDIT CARD – Feb -
-        2023</span>
+      <span>Platform charges CREDIT CARD</span>
       <span>998313</span>
       <span>${data.tsxAmnt}</span>
       <span>${taxableVal.toFixed(2)}</span>
-      <span>${gst.toFixed(2)}</span>
+      ${data.central ? (
+        `<span>${gst.toFixed(2)}</span>
+        <span>0</span>
+        <span>0</span>`
+      ): (
+        `<span>0</span>
+        <span>${((Number(data.taxPerc) / 2) * taxableVal).toFixed(2)}</span>
+        <span>${((Number(data.taxPerc) / 2) * taxableVal).toFixed(2)}</span>`
+      )}
       <span>${totalAmt.toFixed(2)}</span>
     </div>
     <div>
@@ -85,7 +114,7 @@ export const invoiceTempalte = (data: {
 
   <div id="final">
     <div>
-      <span>Invoice Amount In Words(INR): ${totalAmtInWords} Rupees</span>
+      <span>Invoice Amount In Words(INR): ${toTitleCase(totalAmtInWords)} Rupees</span>
       <span>
         <p>Company's PAN: AAJCG4554F</p>
         <p>Bank Account Details:</p>
@@ -238,10 +267,6 @@ export const invoiceTempalte = (data: {
     text-align: center;
   }
 
-  #tsx div span:last-child {
-    border-right: 2px solid black;
-  }
-
   #tsx div span:nth-child(1) {
     width: 30%;
   }
@@ -259,10 +284,20 @@ export const invoiceTempalte = (data: {
   }
 
   #tsx div span:nth-child(5) {
-    width: 10%;
+    width: 7%;
   }
 
   #tsx div span:nth-child(6) {
+    width: 7%;
+  }
+
+  #tsx div span:nth-child(7) {
+    width: 7%;
+  }
+
+
+  #tsx div span:last-child {
+    border-right: 2px solid black;
     width: 20%;
   }
 
@@ -275,7 +310,6 @@ export const invoiceTempalte = (data: {
     width: 70%;
     border-bottom: 2px solid black;
   }
-
   #final {
     display: flex;
     border: 2px solid black;

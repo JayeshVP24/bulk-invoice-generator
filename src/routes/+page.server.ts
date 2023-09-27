@@ -3,34 +3,40 @@ import type { Actions } from './$types';
 import { read, utils } from 'xlsx';
 import puppeteer from 'puppeteer';
 import PDFMerger from 'pdf-merger-js';
+import fs from "fs"
 
 interface form {
 	Amount: number;
-	RechargeDate: string;
+	RechargeDate: Date;
+	Parent: string
 }
 export const prerender = false;
 
-function chunkify(array: form[], n: number): form[][] {
+function chunkify(array: form[], chunkSize: number): form[][] {
 	let chunks: form[][] = []
-	for(let i = n; i > 0; i--) {
-		chunks.push(array.splice(0, Math.ceil(array.length / i)))
-	}
+	for (let i = 0; i < array.length; i += chunkSize) {
+    chunks.push(array.slice(i, i + chunkSize));
+  }
+
 	return chunks
 }
 
-async function generatePdf(data: form[], index: number) {
+async function generatePdf(data: form[], index: number, initialInvoiceNumber: number, commisionPerc: number, central: boolean): Promise<number> {
 	let htmlString: string = '';
-	let invoiceNumber = 1;
-	let commisionPerc = 0.02;
 	let taxPerc = 0.18;
 	for (const el of data) {
+		const [retailerID, name] = String(el.Parent).split("-")
 		htmlString += invoiceTempalte({
-			invoiceNo: invoiceNumber.toString(),
-			dateOfInvoice: String(el.RechargeDate).split(' ')[0],
-			commisionPerc,
+			invoiceNo: initialInvoiceNumber.toString(),
+			dateOfInvoice: el.RechargeDate.toLocaleDateString(),
+			commisionPerc: commisionPerc / 100,
 			taxPerc,
-			tsxAmnt: el.Amount
+			tsxAmnt: el.Amount,
+			name,
+			retailerID,
+			central
 		});
+		initialInvoiceNumber++
 	}
 	try {
 		const browser = await puppeteer.launch({
@@ -48,27 +54,53 @@ async function generatePdf(data: form[], index: number) {
 		})
 
 		await browser.close()
-		console.log("PDF created")
 	} catch (e){
 		console.log("PDF failed")
 		console.log(e)
 	}
+	return initialInvoiceNumber
 }
 
 export const actions = {
 	default: async ({request}) => {
+		console.log("start")
 		const formData = await request.formData();
 		const file = formData.get('report') as File;
-		const wb = read(new Uint8Array(await file.arrayBuffer()));
+		const wb = read(new Uint8Array(await file.arrayBuffer()), {
+			cellDates: true,
+			dense: true
+		});
 		const data = utils.sheet_to_json<form>(wb.Sheets[wb.SheetNames[0]]);
 
 		const merger = new PDFMerger()
-		const chunks = chunkify(data, 5)
+		const chunks = chunkify(data, 200)
+
+		if(fs.existsSync("invoice_output")) { 
+			fs.rmSync("invoice_output", {
+			recursive: true,
+			force: true
+		})
+		}
+		fs.mkdirSync("./invoice_output", {
+			recursive: true,
+		})
+
+		let initialInvoiceNumber = formData.get("initial") as unknown as number
+		const commisionPerc = formData.get("commision") as unknown as number
+		const central = formData.get("tax") as unknown as string === "0" ? true : false
+
 		for(let i=0; i<chunks.length; i++) {
-			generatePdf(chunks[i], i)
+			initialInvoiceNumber = await generatePdf(chunks[i], i, initialInvoiceNumber, commisionPerc, central)
 			await merger.add(`invoice_output/output_${i}.pdf`)
 		}
 		const pdf = await merger.saveAsBuffer()
+
+		if(fs.existsSync("invoice_output")) fs.rmSync("invoice_output", {
+			recursive: true,
+			force: true
+		})	
+
+		console.log("end")
 		return {
 			pdfBase64: pdf.toString("base64")
 		}
