@@ -15,13 +15,13 @@ export const prerender = false;
 function chunkify(array: form[], chunkSize: number): form[][] {
 	let chunks: form[][] = []
 	for (let i = 0; i < array.length; i += chunkSize) {
-    chunks.push(array.slice(i, i + chunkSize));
-  }
+		chunks.push(array.slice(i, i + chunkSize));
+	}
 
 	return chunks
 }
 
-async function generatePdf(data: form[], index: number, initialInvoiceNumber: number, commisionPerc: number, central: boolean): Promise<number> {
+async function generatePdf(data: form[], index: number, initialInvoiceNumber: number, commisionPerc: number, central: boolean): Promise<[number, Buffer]> | undefined {
 	let htmlString: string = '';
 	let taxPerc = 0.18;
 	for (const el of data) {
@@ -44,21 +44,20 @@ async function generatePdf(data: form[], index: number, initialInvoiceNumber: nu
 		})
 		const page = await browser.newPage()
 		await page.setContent(htmlString)
-		await page.pdf({
-			path: `invoice_output/output_${index}.pdf`,
+		const pdfBuffer = (await page.pdf({
 			width: "800px",
 			height: "800px",
 			timeout: 0,
 			printBackground: true,
 			displayHeaderFooter: true
-		})
+		}))
 
 		await browser.close()
+		return [initialInvoiceNumber, pdfBuffer]
 	} catch (e){
 		console.log("PDF failed")
 		console.log(e)
 	}
-	return initialInvoiceNumber
 }
 
 export const actions = {
@@ -75,30 +74,17 @@ export const actions = {
 		const merger = new PDFMerger()
 		const chunks = chunkify(data, 200)
 
-		if(fs.existsSync("invoice_output")) { 
-			fs.rmSync("invoice_output", {
-			recursive: true,
-			force: true
-		})
-		}
-		fs.mkdirSync("./invoice_output", {
-			recursive: true,
-		})
-
 		let initialInvoiceNumber = formData.get("initial") as unknown as number
 		const commisionPerc = formData.get("commision") as unknown as number
 		const central = formData.get("tax") as unknown as string === "0" ? true : false
 
 		for(let i=0; i<chunks.length; i++) {
-			initialInvoiceNumber = await generatePdf(chunks[i], i, initialInvoiceNumber, commisionPerc, central)
-			await merger.add(`invoice_output/output_${i}.pdf`)
+			let resPdf = await generatePdf(chunks[i], i, initialInvoiceNumber, commisionPerc, central)
+			if(!resPdf) throw Error("Something went wront")
+			initialInvoiceNumber = resPdf[0]
+			await merger.add(resPdf[1])
 		}
 		const pdf = await merger.saveAsBuffer()
-
-		if(fs.existsSync("invoice_output")) fs.rmSync("invoice_output", {
-			recursive: true,
-			force: true
-		})	
 
 		console.log("end")
 		return {
@@ -106,3 +92,4 @@ export const actions = {
 		}
 	},
 } satisfies Actions;
+
