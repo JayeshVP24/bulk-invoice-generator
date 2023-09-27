@@ -52,7 +52,7 @@ async function generatePdf(data: form[], initialInvoiceNumber: number, commision
 				process.platform === 'win32'
 					? 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'
 					: process.platform === 'linux'
-						? '/usr/bin/google-chrome'
+						? '/usr/bin/google-chrome-stable'
 						: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 			};
 
