@@ -1,8 +1,11 @@
 import { invoiceTempalte } from '$lib';
 import type { Actions } from './$types';
 import { read, utils } from 'xlsx';
-import chromium from 'chrome-aws-lambda';
 import PDFMerger from 'pdf-merger-js';
+
+import chrome from 'chrome-aws-lambda';
+import puppeteer from 'puppeteer-core';
+
 
 interface form {
 	Amount: number;
@@ -19,7 +22,6 @@ function chunkify(array: form[], chunkSize: number): form[][] {
 
 	return chunks
 }
-process.noDeprecation = true
 async function generatePdf(data: form[], initialInvoiceNumber: number, commisionPerc: number, central: boolean): Promise<[number, Buffer] | undefined>  {
 	let htmlString: string = '';
 	let taxPerc = 0.18;
@@ -38,14 +40,23 @@ async function generatePdf(data: form[], initialInvoiceNumber: number, commision
 		initialInvoiceNumber++
 	}
 	try {
+		const options = process.env.AWS_REGION
+			? {
+				args: chrome.args,
+				executablePath: await chrome.executablePath,
+				headless: chrome.headless
+			}
+			: {
+				args: [],
+				executablePath:
+				process.platform === 'win32'
+					? 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'
+					: process.platform === 'linux'
+						? '/usr/bin/google-chrome'
+						: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+			};
 
-		const browser = await chromium.puppeteer.launch({
-			args: [...chromium.args, "--hide-scrollbars", "--disable-web-security"],
-			defaultViewport: chromium.defaultViewport,
-			executablePath: await chromium.executablePath,
-			headless: "new",
-			ignoreHTTPSErrors: true,
-		})
+		const browser = await puppeteer.launch(options)
 
 		const page = await browser.newPage()
 		await page.setContent(htmlString)
