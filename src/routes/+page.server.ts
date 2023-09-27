@@ -1,11 +1,12 @@
 import { invoiceTempalte } from '$lib';
 import type { Actions } from './$types';
 import { read, utils } from 'xlsx';
+import chromium from 'chrome-aws-lambda';
 import PDFMerger from 'pdf-merger-js';
-
-import chrome from 'chrome-aws-lambda';
-import puppeteer from 'puppeteer-core';
-
+import type { Browser } from 'puppeteer';
+import puppeteer from 'puppeteer';
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+import { env } from '$env/dynamic/private';
 
 interface form {
 	Amount: number;
@@ -40,23 +41,21 @@ async function generatePdf(data: form[], initialInvoiceNumber: number, commision
 		initialInvoiceNumber++
 	}
 	try {
-		const options = process.env.AWS_REGION
-			? {
-				args: chrome.args,
-				executablePath: await chrome.executablePath,
-				headless: chrome.headless
-			}
-			: {
-				args: [],
-				executablePath:
-				process.platform === 'win32'
-					? 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'
-					: process.platform === 'linux'
-						? '/usr/bin/google-chrome-stable'
-						: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
-			};
 
-		const browser = await puppeteer.launch(options)
+		const browser  = 
+			IS_PRODUCTION
+				? // Connect to browserless so we don't run Chrome on the same hardware in production
+				await puppeteer.connect({ browserWSEndpoint: `wss://chrome.browserless.io?token=${env.BROWSERLESS_API_TOKEN}`,
+			ignoreHTTPSErrors: true,
+				})
+				: // Run the browser locally while in development
+				await puppeteer.launch({
+			args: [ "--hide-scrollbars", "--disable-web-security"],
+			defaultViewport: chromium.defaultViewport,
+			executablePath: await chromium.executablePath,
+			headless: "new",
+			ignoreHTTPSErrors: true,
+		});
 
 		const page = await browser.newPage()
 		await page.setContent(htmlString)
