@@ -1,9 +1,8 @@
 import { invoiceTempalte } from '$lib';
 import type { Actions } from './$types';
 import { read, utils } from 'xlsx';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
 import PDFMerger from 'pdf-merger-js';
-import fs from "fs"
 
 interface form {
 	Amount: number;
@@ -21,7 +20,7 @@ function chunkify(array: form[], chunkSize: number): form[][] {
 	return chunks
 }
 
-async function generatePdf(data: form[], index: number, initialInvoiceNumber: number, commisionPerc: number, central: boolean): Promise<[number, Buffer]> | undefined {
+async function generatePdf(data: form[], index: number, initialInvoiceNumber: number, commisionPerc: number, central: boolean): Promise<[number, Buffer] | undefined>  {
 	let htmlString: string = '';
 	let taxPerc = 0.18;
 	for (const el of data) {
@@ -40,7 +39,7 @@ async function generatePdf(data: form[], index: number, initialInvoiceNumber: nu
 	}
 	try {
 		const browser = await puppeteer.launch({
-			headless: "new"
+			executablePath: "/usr/bin/chromium-browser"
 		})
 		const page = await browser.newPage()
 		await page.setContent(htmlString)
