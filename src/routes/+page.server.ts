@@ -40,7 +40,9 @@ async function generatePdf(data: form[], initialInvoiceNumber: number, commision
 	try {
 		const browser = await puppeteer.launch({
 			headless: "new",
-			executablePath: "/usr/bin/chromium-browser"
+			executablePath: "/usr/bin/chromium-browser",
+			args: ['--no-sandbox'],
+
 		})
 		const page = await browser.newPage()
 		await page.setContent(htmlString)
