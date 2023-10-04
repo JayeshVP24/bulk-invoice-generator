@@ -11,6 +11,9 @@ dependencies:
   '@types/jsdom':
     specifier: ^21.1.2
     version: 21.1.2
+  chrome-aws-lambda:
+    specifier: ^10.1.0
+    version: 10.1.0(puppeteer-core@21.3.5)
   html2canvas:
     specifier: ^1.4.1
     version: 1.4.1
@@ -23,6 +26,9 @@ dependencies:
   pdf-merger-js:
     specifier: ^4.3.0
     version: 4.3.0
+  playwright-core:
+    specifier: ^1.38.1
+    version: 1.38.1
   puppeteer:
     specifier: ^21.2.1
     version: 21.2.1(typescript@5.2.2)
@@ -1066,6 +1072,16 @@ packages:
       fsevents: 2.3.3
     dev: true
 
+  /chrome-aws-lambda@10.1.0(puppeteer-core@21.3.5):
+    resolution: {integrity: sha512-NZQVf+J4kqG4sVhRm3WNmOfzY0OtTSm+S8rg77pwePa9RCYHzhnzRs8YvNI6L9tALIW6RpmefWiPURt3vURXcw==}
+    engines: {node: '>= 10.16'}
+    peerDependencies:
+      puppeteer-core: ^10.1.0
+    dependencies:
+      lambdafs: 2.1.1
+      puppeteer-core: 21.3.5
+    dev: false
+
   /chromium-bidi@0.4.26(devtools-protocol@0.0.1159816):
     resolution: {integrity: sha512-lukBGfogAI4T0y3acc86RaacqgKQve47/8pV2c+Hr1PjcICj2K4OkL3qfX3qrqxxnd4ddurFC0WBA3VCQqYeUQ==}
     peerDependencies:
@@ -2088,6 +2104,14 @@ packages:
     resolution: {integrity: sha512-9pSL5XB4J+ifHP0e0jmmC98OGC1nL8/JjS+fi6mnTlIf//yt/MfVLtKg7S6nCtj/8KTcWX7nRlY0XywoYY1ISQ==}
     dev: true
 
+  /lambdafs@2.1.1:
+    resolution: {integrity: sha512-x5k8JcoJWkWLvCVBzrl4pzvkEHSgSBqFjg3Dpsc4AcTMq7oUMym4cL/gRTZ6VM4mUMY+M0dIbQ+V1c1tsqqanQ==}
+    engines: {node: '>= 10.16'}
+    hasBin: true
+    dev: false
+    bundledDependencies:
+      - tar-fs
+
   /levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
     engines: {node: '>= 0.8.0'}
@@ -2444,6 +2468,12 @@ packages:
     resolution: {integrity: sha512-saLsH7WeYYPiD25LDuLRRY/i+6HaPYr6G1OUlN39otzkSTxKnubR9RTxS3/Kk50s1g2JTgFwWQDQyplC5/SHZg==}
     engines: {node: '>= 6'}
     dev: true
+
+  /playwright-core@1.38.1:
+    resolution: {integrity: sha512-tQqNFUKa3OfMf4b2jQ7aGLB8o9bS3bOY0yMEtldtC2+spf8QXG9zvXLTXUeRsoNuxEYMgLYR+NXfAa1rjKRcrg==}
+    engines: {node: '>=16'}
+    hasBin: true
+    dev: false
 
   /postcss-import@15.1.0(postcss@8.4.28):
     resolution: {integrity: sha512-hpr+J05B2FVYUAXHeK1YyI267J/dDDhMU6B6civm8hSY1jYJnBXxzKDKDswzJmtLHryrjhnDjqqp/49t8FALew==}

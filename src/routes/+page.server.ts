@@ -20,7 +20,7 @@ function chunkify(array: form[], chunkSize: number): form[][] {
 	return chunks
 }
 
-async function generatePdf(data: form[], index: number, initialInvoiceNumber: number, commisionPerc: number, central: boolean): Promise<[number, Buffer] | undefined>  {
+async function generatePdf(data: form[], initialInvoiceNumber: number, commisionPerc: number, central: boolean): Promise<[number, Buffer] | undefined>  {
 	let htmlString: string = '';
 	let taxPerc = 0.18;
 	for (const el of data) {
@@ -39,6 +39,7 @@ async function generatePdf(data: form[], index: number, initialInvoiceNumber: nu
 	}
 	try {
 		const browser = await puppeteer.launch({
+			headless: "new",
 			executablePath: "/usr/bin/chromium-browser"
 		})
 		const page = await browser.newPage()
@@ -78,7 +79,7 @@ export const actions = {
 		const central = formData.get("tax") as unknown as string === "0" ? true : false
 
 		for(let i=0; i<chunks.length; i++) {
-			let resPdf = await generatePdf(chunks[i], i, initialInvoiceNumber, commisionPerc, central)
+			let resPdf = await generatePdf(chunks[i], initialInvoiceNumber, commisionPerc, central)
 			if(!resPdf) throw Error("Something went wront")
 			initialInvoiceNumber = resPdf[0]
 			await merger.add(resPdf[1])
