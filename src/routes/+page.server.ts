@@ -42,7 +42,7 @@ async function generatePdf(data: form[], initialInvoiceNumber: number, commision
 			headless: "new",
 			executablePath: "/usr/bin/chromium-browser",
 			args: ['--no-sandbox'],
-
+			protocolTimeout: 100_000_000
 		})
 		const page = await browser.newPage()
 		await page.setContent(htmlString)
@@ -51,7 +51,8 @@ async function generatePdf(data: form[], initialInvoiceNumber: number, commision
 			height: "800px",
 			timeout: 0,
 			printBackground: true,
-			displayHeaderFooter: true
+			displayHeaderFooter: true,
+			
 		}))
 
 		await browser.close()
